@@ -1,4 +1,4 @@
-rootProject.name = "dev.hytalemodding"
+rootProject.name = "UnluckyMobs"
 
 plugins {
     // See documentation on https://scaffoldit.dev
@@ -22,7 +22,7 @@ hytale {
 
     manifest {
         Group = "HytaleModding"
-        Name = "ExamplePlugin"
-        Main = "dev.hytalemodding.ExamplePlugin"
+        Name = "UnluckyMobs"
+        Main = "dev.hytalemodding.UnluckyMobs"
     }
 }
