@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.spatial.SpatialResource;
 import com.hypixel.hytale.math.block.BlockUtil;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.protocol.ChangeVelocityType;
 import com.hypixel.hytale.protocol.packets.world.ServerSetFluid;
 import com.hypixel.hytale.protocol.packets.world.SetFluids;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
@@ -20,6 +21,7 @@ import com.hypixel.hytale.server.core.modules.collision.WorldUtil;
 import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
+import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -46,6 +48,7 @@ public class DeathSystem extends DeathSystems.OnDeathSystem {
     @Override
     public void onComponentAdded(@Nonnull Ref ref, @Nonnull DeathComponent component, @Nonnull Store store, @Nonnull CommandBuffer commandBuffer) {
         Player player = (Player) store.getComponent(ref, Player.getComponentType());
+        if (player != null) return;
 
         float chance = UnluckyMobs.getInstance().getConfig().get().getExplosionChance();
         Damage.EntitySource source = new Damage.EntitySource(ref);
@@ -64,8 +67,9 @@ public class DeathSystem extends DeathSystems.OnDeathSystem {
         ObjectList<Ref<EntityStore>> playerRefs = SpatialResource.getThreadLocalReferenceList();
         playerSpatialResource.getSpatialStructure().collect(deathLoc, 75.0, playerRefs);
 
-        System.out.println("Death triggered! chance=" + chance);
-        if (Math.random() * 100 < chance) {
+        double roll = Math.random() * 100;
+        System.out.println("roll=" + roll + " chance=" + chance + " explode=" + (roll < chance));
+        if (roll < chance) {
             ParticleUtil.spawnParticleEffect("Explosion_Big", deathLoc, playerRefs, store);
 
             ExplosionUtils.performExplosion(source, deathLoc, explosionConfig, ref, commandBuffer, chunkStore);
@@ -94,18 +98,29 @@ public class DeathSystem extends DeathSystems.OnDeathSystem {
             }
 
             Damage deathInfo = component.getDeathInfo();
-            if (deathInfo != null && deathInfo.getSource() instanceof Damage.EntitySource) {
-                Ref attackerRef = ((Damage.EntitySource) deathInfo.getSource()).getRef();
-                TransformComponent playerTransform = (TransformComponent) store.getComponent(attackerRef, TransformComponent.getComponentType());
+            if (deathInfo == null) return;
+            if (deathInfo.getCause() == DamageCause.ENVIRONMENT) return;
+            if (!(deathInfo.getSource() instanceof Damage.EntitySource)) return;
 
-                ComponentType<EntityStore, KnockbackComponent> knockbackComponentType = KnockbackComponent.getComponentType();
-                KnockbackComponent knockbackComponent = (KnockbackComponent)commandBuffer.getComponent(attackerRef, knockbackComponentType);
-                if (knockbackComponent == null) {
-                    knockbackComponent = new KnockbackComponent();
-                    knockbackComponent.setVelocity(new Vector3d(3, 0, 0));
-                    commandBuffer.putComponent(attackerRef, knockbackComponentType, knockbackComponent);
-                }
+            Ref attackerRef = ((Damage.EntitySource) deathInfo.getSource()).getRef();
+            TransformComponent playerTransform = (TransformComponent) store.getComponent(attackerRef, TransformComponent.getComponentType());
+
+            ComponentType<EntityStore, KnockbackComponent> knockbackComponentType = KnockbackComponent.getComponentType();
+            KnockbackComponent knockbackComponent = (KnockbackComponent)commandBuffer.getComponent(attackerRef, knockbackComponentType);
+
+            Vector3d mobPos = transform.getPosition();
+            Vector3d playerPos = playerTransform.getPosition();
+
+            Vector3d direction = playerPos.clone().subtract(mobPos).normalize();
+            direction.y = 0.5;
+
+            if (knockbackComponent == null) {
+                knockbackComponent = new KnockbackComponent();
+                commandBuffer.putComponent(attackerRef, knockbackComponentType, knockbackComponent);
             }
+            knockbackComponent.setVelocity(direction.scale(0.05));
+            knockbackComponent.setVelocityType(ChangeVelocityType.Add);
+            knockbackComponent.setDuration(0.1f);
         }
     }
 }
