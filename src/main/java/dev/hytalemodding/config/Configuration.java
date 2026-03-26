@@ -1,4 +1,4 @@
-package dev.hytalemodding;
+package dev.hytalemodding.config;
 
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
@@ -13,14 +13,14 @@ public class Configuration {
             .append(new KeyedCodec<Integer>("Explosion-Radius", Codec.INTEGER),
                     (config, value) -> config.explosionRadius = value,
                     (config) -> config.explosionRadius).add()
-            .append(new KeyedCodec<Boolean>("Damage-Player", Codec.BOOLEAN),
-                    (config, value) -> config.damagePlayer = value,
-                    (config) -> config.damagePlayer).add()
+            .append(new KeyedCodec<Float>("Explosion-Damage", Codec.FLOAT),
+                    (config, value) -> config.explosionDamage = value,
+                    (config) -> config.explosionDamage).add()
             .build();
 
     private int explosionChance = 50;
-    private int explosionRadius = 20;
-    private boolean damagePlayer = true;
+    private int explosionRadius = 7;
+    private float explosionDamage = 15.0f;
 
     public Configuration() {
     }
@@ -41,11 +41,11 @@ public class Configuration {
         this.explosionRadius = explosionRadius;
     }
 
-    public boolean isDamagePlayer() {
-        return damagePlayer;
+    public float getExplosionDamage() {
+        return explosionDamage;
     }
 
-    public void setDamagePlayer(boolean damagePlayer) {
-        this.damagePlayer = damagePlayer;
+    public void setExplosionDamage(float explosionDamage) {
+        this.explosionDamage = explosionDamage;
     }
 }

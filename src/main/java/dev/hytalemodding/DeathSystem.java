@@ -1,39 +1,28 @@
 package dev.hytalemodding;
 
-import com.hypixel.hytale.builtin.buildertools.utils.FluidPatternHelper;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.spatial.SpatialResource;
-import com.hypixel.hytale.math.block.BlockUtil;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.protocol.ChangeVelocityType;
-import com.hypixel.hytale.protocol.packets.world.ServerSetFluid;
-import com.hypixel.hytale.protocol.packets.world.SetFluids;
-import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
-import com.hypixel.hytale.server.core.asset.type.fluid.FireFluidTicker;
-import com.hypixel.hytale.server.core.asset.type.fluid.Fluid;
-import com.hypixel.hytale.server.core.entity.ExplosionConfig;
 import com.hypixel.hytale.server.core.entity.ExplosionUtils;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.knockback.KnockbackComponent;
-import com.hypixel.hytale.server.core.modules.collision.WorldUtil;
 import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems;
-import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.accessor.BlockAccessor;
-import com.hypixel.hytale.server.core.universe.world.chunk.section.FluidSection;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.config.Configuration;
+import dev.hytalemodding.config.UnluckyExplosionConfig;
 import it.unimi.dsi.fastutil.objects.ObjectList;
-import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import javax.annotation.Nonnull;
 
@@ -50,9 +39,12 @@ public class DeathSystem extends DeathSystems.OnDeathSystem {
         Player player = (Player) store.getComponent(ref, Player.getComponentType());
         if (player != null) return;
 
-        float chance = UnluckyMobs.getInstance().getConfig().get().getExplosionChance();
         Damage.EntitySource source = new Damage.EntitySource(ref);
-        UnluckyExplosionConfig explosionConfig = new UnluckyExplosionConfig();
+
+        Configuration config = UnluckyMobs.getInstance().getConfig().get();
+        UnluckyExplosionConfig explosionConfig = new UnluckyExplosionConfig(config);
+
+        float chance = config.getExplosionChance();
 
         World world = ((EntityStore) store.getExternalData()).getWorld();
         ComponentAccessor<ChunkStore> chunkStore = world.getChunkStore().getStore();
@@ -68,12 +60,10 @@ public class DeathSystem extends DeathSystems.OnDeathSystem {
         playerSpatialResource.getSpatialStructure().collect(deathLoc, 75.0, playerRefs);
 
         double roll = Math.random() * 100;
-        System.out.println("roll=" + roll + " chance=" + chance + " explode=" + (roll < chance));
         if (roll < chance) {
             ParticleUtil.spawnParticleEffect("Explosion_Big", deathLoc, playerRefs, store);
 
             ExplosionUtils.performExplosion(source, deathLoc, explosionConfig, ref, commandBuffer, chunkStore);
-            System.out.println("Explosion!");
 
             int radius = 2;
             for (int dx = -radius; dx <= radius; dx++) {

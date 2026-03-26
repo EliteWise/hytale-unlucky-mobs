@@ -4,8 +4,7 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.util.Config;
-import dev.hytalemodding.commands.ExampleCommand;
-import dev.hytalemodding.events.ExampleEvent;
+import dev.hytalemodding.config.Configuration;
 
 import javax.annotation.Nonnull;
 
@@ -22,8 +21,6 @@ public class UnluckyMobs extends JavaPlugin {
     @Override
     protected void setup() {
         config.save();
-        this.getCommandRegistry().registerCommand(new ExampleCommand("example", "An example command"));
-        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, ExampleEvent::onPlayerReady);
         this.getEntityStoreRegistry().registerSystem(new DeathSystem());
     }
 
